@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Added device-based targeting
+- Added URL fragment targeting
+- Added visual templates for CTA rendering
+- Added top-performing pages analytics
+- Added WordPress.org SVN preparation script
+
 ## 0.3.0
 
 - Added CSV export for plugin statistics

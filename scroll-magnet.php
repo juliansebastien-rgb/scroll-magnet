@@ -3,7 +3,7 @@
  * Plugin Name: Scroll Magnet
  * Plugin URI: https://github.com/juliansebastien-rgb/scroll-magnet
  * Description: Behavior-based conversion CTAs triggered by visitor scroll depth.
- * Version: 0.3.0
+ * Version: 0.4.0
  * Author: Le Labo d'Azertaf
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 final class Scroll_Magnet {
-    private const VERSION = '0.3.0';
+    private const VERSION = '0.4.0';
     private const OPTION_KEY = 'scroll_magnet_settings';
     private const STATS_OPTION_KEY = 'scroll_magnet_stats';
     private const TRANSIENT_PREFIX = 'scroll_magnet_';
@@ -137,6 +137,9 @@ final class Scroll_Magnet {
         $sanitized['enabled'] = !empty($input['enabled']);
         $sanitized['target_scope'] = $this->sanitize_scope($input['target_scope'] ?? $defaults['target_scope']);
         $sanitized['specific_ids'] = $this->sanitize_specific_ids($input['specific_ids'] ?? '');
+        $sanitized['device_scope'] = $this->sanitize_device_scope($input['device_scope'] ?? $defaults['device_scope']);
+        $sanitized['url_contains'] = sanitize_text_field($input['url_contains'] ?? $defaults['url_contains']);
+        $sanitized['template_style'] = $this->sanitize_template_style($input['template_style'] ?? $defaults['template_style']);
 
         foreach ([1, 2, 3] as $index) {
             $stage_key = 'stage_' . $index;
@@ -150,6 +153,7 @@ final class Scroll_Magnet {
                 'message' => sanitize_text_field($stage_input['message'] ?? $default_stage['message']),
                 'button_label' => sanitize_text_field($stage_input['button_label'] ?? $default_stage['button_label']),
                 'button_url' => esc_url_raw($stage_input['button_url'] ?? $default_stage['button_url']),
+                'headline' => sanitize_text_field($stage_input['headline'] ?? $default_stage['headline']),
             ];
         }
 
@@ -221,6 +225,39 @@ final class Scroll_Magnet {
                                     <p class="description"><?php echo esc_html__('Optionnel. Liste d’IDs séparés par des virgules. Utilisé uniquement si le ciblage est “Pages spécifiques”.', 'scroll-magnet'); ?></p>
                                 </td>
                             </tr>
+                            <tr>
+                                <th scope="row"><?php echo esc_html__('Device', 'scroll-magnet'); ?></th>
+                                <td>
+                                    <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[device_scope]">
+                                        <?php foreach ($this->get_device_scope_options() as $value => $label) : ?>
+                                            <option value="<?php echo esc_attr($value); ?>" <?php selected($settings['device_scope'], $value); ?>>
+                                                <?php echo esc_html($label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description"><?php echo esc_html__('Permet de limiter l’affichage au mobile ou au desktop.', 'scroll-magnet'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php echo esc_html__('URL contient', 'scroll-magnet'); ?></th>
+                                <td>
+                                    <input type="text" class="regular-text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[url_contains]" value="<?php echo esc_attr($settings['url_contains']); ?>">
+                                    <p class="description"><?php echo esc_html__('Optionnel. N’affiche le plugin que si l’URL courante contient cette chaîne.', 'scroll-magnet'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php echo esc_html__('Template visuel', 'scroll-magnet'); ?></th>
+                                <td>
+                                    <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[template_style]">
+                                        <?php foreach ($this->get_template_style_options() as $value => $label) : ?>
+                                            <option value="<?php echo esc_attr($value); ?>" <?php selected($settings['template_style'], $value); ?>>
+                                                <?php echo esc_html($label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description"><?php echo esc_html__('Choisis une ambiance visuelle rapide sans toucher au CSS.', 'scroll-magnet'); ?></p>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -264,6 +301,12 @@ final class Scroll_Magnet {
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row"><?php echo esc_html__('Accroche', 'scroll-magnet'); ?></th>
+                                    <td>
+                                        <input type="text" class="regular-text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[stage_<?php echo esc_attr((string) $index); ?>][headline]" value="<?php echo esc_attr($stage['headline']); ?>">
                                     </td>
                                 </tr>
                                 <tr>
@@ -365,6 +408,38 @@ final class Scroll_Magnet {
                     </table>
                 <?php endif; ?>
             </div>
+
+            <div class="scroll-magnet-admin__section">
+                <h2><?php echo esc_html__('Pages les plus performantes', 'scroll-magnet'); ?></h2>
+                <?php $top_pages = $this->get_top_pages($stats); ?>
+                <?php if (empty($top_pages)) : ?>
+                    <p class="description"><?php echo esc_html__('Pas encore assez de données pour afficher des pages.', 'scroll-magnet'); ?></p>
+                <?php else : ?>
+                    <table class="widefat striped">
+                        <thead>
+                            <tr>
+                                <th><?php echo esc_html__('Page', 'scroll-magnet'); ?></th>
+                                <th><?php echo esc_html__('Vues', 'scroll-magnet'); ?></th>
+                                <th><?php echo esc_html__('Clics', 'scroll-magnet'); ?></th>
+                                <th><?php echo esc_html__('CTR', 'scroll-magnet'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($top_pages as $page => $page_stats) : ?>
+                                <?php $page_views = (int) ($page_stats['views'] ?? 0); ?>
+                                <?php $page_clicks = (int) ($page_stats['clicks'] ?? 0); ?>
+                                <?php $page_ctr = $page_views > 0 ? round(($page_clicks / $page_views) * 100, 2) : 0; ?>
+                                <tr>
+                                    <td><?php echo esc_html($page); ?></td>
+                                    <td><?php echo esc_html((string) $page_views); ?></td>
+                                    <td><?php echo esc_html((string) $page_clicks); ?></td>
+                                    <td><?php echo esc_html((string) $page_ctr); ?>%</td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </div>
         </div>
         <?php
     }
@@ -398,6 +473,19 @@ final class Scroll_Magnet {
             $stats[$stage]['clicks'] = (int) ($stats[$stage]['clicks'] ?? 0) + 1;
         }
 
+        $normalized_page = $this->normalize_page_for_stats($page);
+        if ($normalized_page !== '') {
+            $page_stats = isset($stats['pages'][$normalized_page]) && is_array($stats['pages'][$normalized_page]) ? $stats['pages'][$normalized_page] : ['views' => 0, 'clicks' => 0];
+
+            if ($event === 'view') {
+                $page_stats['views'] = (int) ($page_stats['views'] ?? 0) + 1;
+            } else {
+                $page_stats['clicks'] = (int) ($page_stats['clicks'] ?? 0) + 1;
+            }
+
+            $stats['pages'][$normalized_page] = $page_stats;
+        }
+
         $stats['last_activity'] = current_time('mysql');
         $recent_events = isset($stats['recent_events']) && is_array($stats['recent_events']) ? $stats['recent_events'] : [];
         array_unshift(
@@ -406,7 +494,7 @@ final class Scroll_Magnet {
                 'time' => current_time('mysql'),
                 'stage' => strtoupper(str_replace('_', ' ', $stage)),
                 'event' => $event,
-                'page' => $this->normalize_page_for_stats($page),
+                'page' => $normalized_page,
             ]
         );
         $stats['recent_events'] = array_slice($recent_events, 0, 50);
@@ -606,6 +694,7 @@ final class Scroll_Magnet {
             'stage_3' => ['views' => 0, 'clicks' => 0],
             'last_activity' => '',
             'recent_events' => [],
+            'pages' => [],
         ];
     }
 
@@ -614,10 +703,14 @@ final class Scroll_Magnet {
             'enabled' => true,
             'target_scope' => 'all',
             'specific_ids' => '',
+            'device_scope' => 'all',
+            'url_contains' => '',
+            'template_style' => 'classic',
             'stage_1' => [
                 'enabled' => true,
                 'percent' => 50,
                 'type' => 'banner',
+                'headline' => __('Offre en cours', 'scroll-magnet'),
                 'message' => __('Vous êtes arrivé jusqu’ici. Profitez de -10% maintenant.', 'scroll-magnet'),
                 'button_label' => __('Voir l’offre', 'scroll-magnet'),
                 'button_url' => home_url('/'),
@@ -626,6 +719,7 @@ final class Scroll_Magnet {
                 'enabled' => true,
                 'percent' => 70,
                 'type' => 'floating_button',
+                'headline' => __('Toujours intéressé ?', 'scroll-magnet'),
                 'message' => __('Encore un petit effort. Votre offre vous attend.', 'scroll-magnet'),
                 'button_label' => __('Je découvre', 'scroll-magnet'),
                 'button_url' => home_url('/'),
@@ -634,6 +728,7 @@ final class Scroll_Magnet {
                 'enabled' => true,
                 'percent' => 90,
                 'type' => 'popup',
+                'headline' => __('Dernière chance', 'scroll-magnet'),
                 'message' => __('Dernière chance avant de partir. Activez votre avantage maintenant.', 'scroll-magnet'),
                 'button_label' => __('Activer mon offre', 'scroll-magnet'),
                 'button_url' => home_url('/'),
@@ -656,9 +751,11 @@ final class Scroll_Magnet {
                 'trackKey' => 'stage_' . $index,
                 'percent' => (int) $stage['percent'],
                 'type' => $stage['type'],
+                'headline' => $stage['headline'],
                 'message' => $stage['message'],
                 'buttonLabel' => $stage['button_label'],
                 'buttonUrl' => $stage['button_url'],
+                'theme' => $settings['template_style'] ?? 'classic',
             ];
         }
 
@@ -681,6 +778,15 @@ final class Scroll_Magnet {
             return false;
         }
 
+        $device_scope = $settings['device_scope'] ?? 'all';
+        if ($device_scope === 'mobile' && !wp_is_mobile()) {
+            return false;
+        }
+
+        if ($device_scope === 'desktop' && wp_is_mobile()) {
+            return false;
+        }
+
         $scope = $settings['target_scope'] ?? 'all';
 
         if ($scope === 'all') {
@@ -698,10 +804,21 @@ final class Scroll_Magnet {
         if ($scope === 'specific') {
             $ids = array_filter(array_map('absint', explode(',', (string) ($settings['specific_ids'] ?? ''))));
 
-            return !empty($ids) && in_array(get_queried_object_id(), $ids, true);
+            if (empty($ids) || !in_array(get_queried_object_id(), $ids, true)) {
+                return false;
+            }
         }
 
-        return false;
+        $url_contains = isset($settings['url_contains']) ? trim((string) $settings['url_contains']) : '';
+        if ($url_contains !== '') {
+            $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash((string) $_SERVER['REQUEST_URI']) : '';
+
+            if (stripos($request_uri, $url_contains) === false) {
+                return false;
+            }
+        }
+
+        return in_array($scope, ['all', 'posts', 'pages', 'specific'], true);
     }
 
     private function sanitize_scope($value): string {
@@ -742,12 +859,42 @@ final class Scroll_Magnet {
         return implode(',', $ids);
     }
 
+    private function sanitize_device_scope($value): string {
+        $value = is_string($value) ? $value : 'all';
+        $allowed = array_keys($this->get_device_scope_options());
+
+        return in_array($value, $allowed, true) ? $value : 'all';
+    }
+
+    private function sanitize_template_style($value): string {
+        $value = is_string($value) ? $value : 'classic';
+        $allowed = array_keys($this->get_template_style_options());
+
+        return in_array($value, $allowed, true) ? $value : 'classic';
+    }
+
     private function get_scope_options(): array {
         return [
             'all' => __('Toutes les pages et articles', 'scroll-magnet'),
             'posts' => __('Articles uniquement', 'scroll-magnet'),
             'pages' => __('Pages uniquement', 'scroll-magnet'),
             'specific' => __('Pages spécifiques', 'scroll-magnet'),
+        ];
+    }
+
+    private function get_device_scope_options(): array {
+        return [
+            'all' => __('Tous les appareils', 'scroll-magnet'),
+            'desktop' => __('Desktop uniquement', 'scroll-magnet'),
+            'mobile' => __('Mobile uniquement', 'scroll-magnet'),
+        ];
+    }
+
+    private function get_template_style_options(): array {
+        return [
+            'classic' => __('Classic', 'scroll-magnet'),
+            'contrast' => __('Contrast', 'scroll-magnet'),
+            'soft' => __('Soft', 'scroll-magnet'),
         ];
     }
 
@@ -821,6 +968,20 @@ final class Scroll_Magnet {
         }
 
         return $last_activity;
+    }
+
+    private function get_top_pages(array $stats): array {
+        $pages = isset($stats['pages']) && is_array($stats['pages']) ? $stats['pages'] : [];
+
+        uasort(
+            $pages,
+            static function (array $left, array $right): int {
+                return ((int) ($right['clicks'] ?? 0) + (int) ($right['views'] ?? 0))
+                    <=> ((int) ($left['clicks'] ?? 0) + (int) ($left['views'] ?? 0));
+            }
+        );
+
+        return array_slice($pages, 0, 8, true);
     }
 
     private function get_github_release_data(): ?array {

@@ -25,3 +25,16 @@ If you want to regenerate them locally:
 ```bash
 python3 tools/generate_wp_org_assets.py
 ```
+
+## SVN Preparation
+
+You can also generate a ready-to-import WordPress.org layout:
+
+```bash
+python3 tools/prepare_wordpress_org_svn.py
+```
+
+This creates:
+
+- `dist/wordpress-org/trunk`
+- `dist/wordpress-org/assets`

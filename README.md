@@ -8,18 +8,21 @@ Instead of using generic popups, the plugin helps site owners trigger different 
 - 70% scroll: reassurance CTA
 - 90% scroll: final conversion push
 
-## Version 0.3.0
+## Version 0.4.0
 
 - 3 configurable scroll triggers
 - 3 display formats: bottom banner, floating button, soft popup
 - Custom message, button label and target URL
 - Simple targeting: all content, posts only, pages only, specific page IDs
+- Advanced targeting by device and URL fragment
+- Quick visual templates: Classic, Contrast, Soft
 - Front assets only load when the plugin is active and relevant
 - Basic view and click tracking per trigger
 - Live admin preview
 - GitHub-based plugin update support
 - CSV export and stats reset
 - Recent activity log in the admin page
+- Top performing pages table
 
 ## Installation
 

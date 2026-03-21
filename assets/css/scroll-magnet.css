@@ -1,6 +1,30 @@
 .scroll-magnet-root {
     position: relative;
     z-index: 99999;
+    --sm-bg-main: #f5f1e8;
+    --sm-bg-card: #ffffff;
+    --sm-fg-main: #132238;
+    --sm-accent: #132238;
+    --sm-accent-contrast: #ffffff;
+    --sm-overlay: rgba(19, 34, 56, 0.45);
+}
+
+.scroll-magnet-root[data-theme="contrast"] {
+    --sm-bg-main: #132238;
+    --sm-bg-card: #132238;
+    --sm-fg-main: #f5f1e8;
+    --sm-accent: #c76d4a;
+    --sm-accent-contrast: #ffffff;
+    --sm-overlay: rgba(10, 20, 35, 0.72);
+}
+
+.scroll-magnet-root[data-theme="soft"] {
+    --sm-bg-main: #edf4f1;
+    --sm-bg-card: #fbfbf8;
+    --sm-fg-main: #24403d;
+    --sm-accent: #4d8b81;
+    --sm-accent-contrast: #ffffff;
+    --sm-overlay: rgba(36, 64, 61, 0.35);
 }
 
 .scroll-magnet-item {
@@ -8,9 +32,18 @@
     font-family: Arial, sans-serif;
 }
 
+.scroll-magnet-headline {
+    display: block;
+    color: var(--sm-fg-main);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 .scroll-magnet-message {
     margin: 0;
-    color: #132238;
+    color: var(--sm-fg-main);
     font-size: 15px;
     line-height: 1.5;
 }
@@ -22,8 +55,8 @@
     min-height: 42px;
     padding: 0 18px;
     border-radius: 999px;
-    background: #132238;
-    color: #ffffff;
+    background: var(--sm-accent);
+    color: var(--sm-accent-contrast);
     font-weight: 700;
     text-decoration: none;
     transition: transform 0.2s ease, opacity 0.2s ease;
@@ -31,7 +64,7 @@
 
 .scroll-magnet-button:hover,
 .scroll-magnet-button:focus {
-    color: #ffffff;
+    color: var(--sm-accent-contrast);
     opacity: 0.92;
     transform: translateY(-1px);
 }
@@ -39,7 +72,7 @@
 .scroll-magnet-close {
     border: 0;
     background: transparent;
-    color: #4a5a70;
+    color: var(--sm-fg-main);
     cursor: pointer;
     font-size: 22px;
     line-height: 1;
@@ -71,7 +104,7 @@
     justify-content: center;
     padding: 18px 56px 18px 18px;
     border-radius: 18px;
-    background: #f5f1e8;
+    background: var(--sm-bg-main);
     box-shadow: 0 14px 32px rgba(19, 34, 56, 0.16);
 }
 
@@ -91,12 +124,12 @@
     max-width: 280px;
     padding: 18px 18px 14px;
     border-radius: 18px;
-    background: #ffffff;
+    background: var(--sm-bg-card);
     box-shadow: 0 12px 30px rgba(19, 34, 56, 0.16);
 }
 
 .scroll-magnet-floating-caption {
-    color: #132238;
+    color: var(--sm-fg-main);
     font-size: 14px;
     line-height: 1.5;
 }
@@ -114,7 +147,7 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: rgba(19, 34, 56, 0.45);
+    background: var(--sm-overlay);
     animation: scroll-magnet-enter 0.25s ease;
 }
 
@@ -126,7 +159,7 @@
     width: min(100%, 420px);
     padding: 28px;
     border-radius: 24px;
-    background: #ffffff;
+    background: var(--sm-bg-card);
     box-shadow: 0 20px 50px rgba(19, 34, 56, 0.2);
 }
 

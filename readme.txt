@@ -4,7 +4,7 @@ Tags: popup, call to action, marketing, conversion, scroll, cta
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,11 +35,14 @@ This makes the plugin useful for:
 - 3 display formats: bottom banner, floating button, popup
 - Custom message, button label and URL
 - Simple targeting rules
+- Device and URL-based targeting
 - Lightweight front-end loading
 - Basic view and click tracking
 - Live preview in the admin page
 - CSV export and stats reset
 - Recent activity log
+- Visual templates
+- Top pages analytics
 
 == Installation ==
 
@@ -67,6 +70,14 @@ It can show a popup, but its main value is behavior-based conversion triggering 
 This version includes simple per-trigger view and click counters. More advanced analytics and testing are planned for a future premium version.
 
 == Changelog ==
+
+= 0.4.0 =
+
+- Added device-based targeting
+- Added URL fragment targeting
+- Added visual templates for CTA blocks
+- Added page-level analytics summary
+- Added WordPress.org SVN preparation script
 
 = 0.3.0 =
 

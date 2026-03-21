@@ -61,6 +61,17 @@
     return link;
   }
 
+  function createHeadline(stage) {
+    if (!stage.headline) {
+      return null;
+    }
+
+    const heading = document.createElement("strong");
+    heading.className = "scroll-magnet-headline";
+    heading.textContent = stage.headline;
+    return heading;
+  }
+
   function closeElement(element) {
     element.classList.add("is-closing");
     window.setTimeout(() => {
@@ -86,6 +97,10 @@
     text.className = "scroll-magnet-message";
     text.textContent = stage.message;
 
+    const headline = createHeadline(stage);
+    if (headline) {
+      banner.appendChild(headline);
+    }
     banner.appendChild(text);
     banner.appendChild(createButton(stage));
     banner.appendChild(createCloseButton(banner));
@@ -100,6 +115,10 @@
     caption.className = "scroll-magnet-floating-caption";
     caption.textContent = stage.message;
 
+    const headline = createHeadline(stage);
+    if (headline) {
+      buttonWrap.appendChild(headline);
+    }
     buttonWrap.appendChild(caption);
     buttonWrap.appendChild(createButton(stage));
     buttonWrap.appendChild(createCloseButton(buttonWrap));
@@ -118,6 +137,10 @@
     text.textContent = stage.message;
 
     popup.appendChild(createCloseButton(overlay));
+    const headline = createHeadline(stage);
+    if (headline) {
+      popup.appendChild(headline);
+    }
     popup.appendChild(text);
     popup.appendChild(createButton(stage));
     overlay.appendChild(popup);
@@ -133,6 +156,7 @@
 
   function showStage(stage) {
     track(stage.trackKey, "view");
+    root.setAttribute("data-theme", stage.theme || "classic");
 
     if (stage.type === "popup") {
       renderPopup(stage);
