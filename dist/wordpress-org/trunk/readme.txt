@@ -4,7 +4,7 @@ Tags: popup, call to action, marketing, conversion, scroll, cta
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,7 @@ This makes the plugin useful for:
 - Recent activity log
 - Visual templates
 - Top pages analytics
+- Direct update support from the WordPress Extensions screen via GitHub releases
 
 == Installation ==
 
@@ -70,6 +71,13 @@ It can show a popup, but its main value is behavior-based conversion triggering 
 This version includes simple per-trigger view and click counters. More advanced analytics and testing are planned for a future premium version.
 
 == Changelog ==
+
+= 0.5.0 =
+
+- Added time + scroll trigger logic
+- Added taxonomy targeting by category or tag slugs
+- Added onboarding section in the admin page
+- Improved GitHub-based update details for the WordPress Extensions screen
 
 = 0.4.0 =
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Added time + scroll trigger logic
+- Added taxonomy targeting by category or tag slugs
+- Added onboarding section in the admin page
+- Improved GitHub-based update details for the WordPress Extensions screen
+
 ## 0.4.0
 
 - Added device-based targeting

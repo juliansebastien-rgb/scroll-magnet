@@ -32,6 +32,10 @@
         `select[name="scroll_magnet_settings[stage_${index}][type]"]`,
         "banner"
       ),
+      headline: getFieldValue(
+        `input[name="scroll_magnet_settings[stage_${index}][headline]"]`,
+        ""
+      ),
       message: getFieldValue(
         `input[name="scroll_magnet_settings[stage_${index}][message]"]`,
         ""
@@ -58,6 +62,10 @@
   function renderPreview() {
     const stages = [1, 2, 3].map(getStage);
     const enabledStages = stages.filter((stage) => stage.enabled);
+    const delay = getFieldValue(
+      'input[name="scroll_magnet_settings[trigger_delay_seconds]"]',
+      "0"
+    );
 
     if (!enabledStages.length) {
       preview.innerHTML =
@@ -71,8 +79,9 @@
           <article class="scroll-magnet-admin__preview-card">
             <div class="scroll-magnet-admin__preview-top">
               <span class="scroll-magnet-admin__preview-badge">Trigger ${index + 1}</span>
-              <span class="scroll-magnet-admin__preview-meta">${stage.percent}% • ${stageTypeLabel(stage.type)}</span>
+              <span class="scroll-magnet-admin__preview-meta">${stage.percent}% • ${stageTypeLabel(stage.type)} • ${delay}s</span>
             </div>
+            <p class="scroll-magnet-admin__preview-headline">${stage.headline || "Ajoute une accroche."}</p>
             <p class="scroll-magnet-admin__preview-message">${stage.message || "Ajoute un message ici."}</p>
             <span class="scroll-magnet-admin__preview-button">${stage.buttonLabel || "Texte du bouton"}</span>
           </article>

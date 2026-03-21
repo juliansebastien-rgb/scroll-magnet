@@ -1,11 +1,11 @@
 # Changelog
 
-## 0.3.0
+## 0.5.0
 
-- Added CSV export for plugin statistics
-- Added stats reset from the admin screen
-- Added recent activity log with page path capture
-- Added WordPress.org release assets and generator script
+- Added time + scroll trigger logic
+- Added taxonomy targeting by category or tag slugs
+- Added onboarding section in the admin page
+- Improved GitHub-based update details for the WordPress Extensions screen
 
 ## 0.4.0
 
@@ -14,6 +14,13 @@
 - Added visual templates for CTA rendering
 - Added top-performing pages analytics
 - Added WordPress.org SVN preparation script
+
+## 0.3.0
+
+- Added CSV export for plugin statistics
+- Added stats reset from the admin screen
+- Added recent activity log with page path capture
+- Added WordPress.org release assets and generator script
 
 ## 0.2.0
 

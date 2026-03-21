@@ -96,6 +96,15 @@
     line-height: 1.5;
 }
 
+.scroll-magnet-admin__preview-headline {
+    margin: 0 0 8px;
+    color: #132238;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 .scroll-magnet-admin__preview-button {
     display: inline-flex;
     align-items: center;

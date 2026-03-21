@@ -13,6 +13,7 @@
   const root = document.createElement("div");
   root.className = "scroll-magnet-root";
   document.body.appendChild(root);
+  const startedAt = Date.now();
 
   function track(stageKey, eventName) {
     if (!config.ajaxUrl || !config.ajaxNonce || !stageKey || !eventName) {
@@ -176,6 +177,13 @@
 
     stages.forEach((stage) => {
       if (!stage.shown && percent >= stage.percent) {
+        const minSeconds = Number(stage.minSeconds || 0);
+        const elapsedSeconds = (Date.now() - startedAt) / 1000;
+
+        if (elapsedSeconds < minSeconds) {
+          return;
+        }
+
         stage.shown = true;
         showStage(stage);
       }

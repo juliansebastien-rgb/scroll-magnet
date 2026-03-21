@@ -8,7 +8,7 @@ Instead of using generic popups, the plugin helps site owners trigger different 
 - 70% scroll: reassurance CTA
 - 90% scroll: final conversion push
 
-## Version 0.4.0
+## Version 0.5.0
 
 - 3 configurable scroll triggers
 - 3 display formats: bottom banner, floating button, soft popup
@@ -23,6 +23,9 @@ Instead of using generic popups, the plugin helps site owners trigger different 
 - CSV export and stats reset
 - Recent activity log in the admin page
 - Top performing pages table
+- Direct WordPress update flow through GitHub releases
+- Time + scroll trigger gating
+- Taxonomy targeting by category or tag
 
 ## Installation
 

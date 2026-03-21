@@ -3,7 +3,7 @@
  * Plugin Name: Scroll Magnet
  * Plugin URI: https://github.com/juliansebastien-rgb/scroll-magnet
  * Description: Behavior-based conversion CTAs triggered by visitor scroll depth.
- * Version: 0.4.0
+ * Version: 0.5.0
  * Author: Le Labo d'Azertaf
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 final class Scroll_Magnet {
-    private const VERSION = '0.4.0';
+    private const VERSION = '0.5.0';
     private const OPTION_KEY = 'scroll_magnet_settings';
     private const STATS_OPTION_KEY = 'scroll_magnet_stats';
     private const TRANSIENT_PREFIX = 'scroll_magnet_';
@@ -140,6 +140,9 @@ final class Scroll_Magnet {
         $sanitized['device_scope'] = $this->sanitize_device_scope($input['device_scope'] ?? $defaults['device_scope']);
         $sanitized['url_contains'] = sanitize_text_field($input['url_contains'] ?? $defaults['url_contains']);
         $sanitized['template_style'] = $this->sanitize_template_style($input['template_style'] ?? $defaults['template_style']);
+        $sanitized['trigger_delay_seconds'] = max(0, (int) ($input['trigger_delay_seconds'] ?? $defaults['trigger_delay_seconds']));
+        $sanitized['taxonomy_scope'] = $this->sanitize_taxonomy_scope($input['taxonomy_scope'] ?? $defaults['taxonomy_scope']);
+        $sanitized['taxonomy_terms'] = $this->sanitize_taxonomy_terms($input['taxonomy_terms'] ?? $defaults['taxonomy_terms']);
 
         foreach ([1, 2, 3] as $index) {
             $stage_key = 'stage_' . $index;
@@ -172,6 +175,24 @@ final class Scroll_Magnet {
         <div class="wrap scroll-magnet-admin">
             <h1><?php echo esc_html__('Scroll Magnet', 'scroll-magnet'); ?></h1>
             <p><?php echo esc_html__('Des CTA de conversion déclenchés selon le niveau d’engagement réel du visiteur.', 'scroll-magnet'); ?></p>
+
+            <div class="scroll-magnet-admin__section">
+                <h2><?php echo esc_html__('Onboarding rapide', 'scroll-magnet'); ?></h2>
+                <div class="scroll-magnet-admin__hero">
+                    <div class="scroll-magnet-admin__hero-card">
+                        <h2><?php echo esc_html__('1. Ciblage', 'scroll-magnet'); ?></h2>
+                        <p><?php echo esc_html__('Choisis où et sur quels appareils le plugin doit tourner. Pour commencer, vise une seule famille de contenus.', 'scroll-magnet'); ?></p>
+                    </div>
+                    <div class="scroll-magnet-admin__hero-card">
+                        <h2><?php echo esc_html__('2. Déclenchement', 'scroll-magnet'); ?></h2>
+                        <p><?php echo esc_html__('Combine un délai de quelques secondes avec les paliers de scroll pour éviter les affichages trop rapides.', 'scroll-magnet'); ?></p>
+                    </div>
+                    <div class="scroll-magnet-admin__hero-card">
+                        <h2><?php echo esc_html__('3. Analyse', 'scroll-magnet'); ?></h2>
+                        <p><?php echo esc_html__('Observe les vues, clics et pages les plus actives avant de changer les messages ou les templates.', 'scroll-magnet'); ?></p>
+                    </div>
+                </div>
+            </div>
 
             <div class="scroll-magnet-admin__hero">
                 <div class="scroll-magnet-admin__hero-card">
@@ -256,6 +277,33 @@ final class Scroll_Magnet {
                                         <?php endforeach; ?>
                                     </select>
                                     <p class="description"><?php echo esc_html__('Choisis une ambiance visuelle rapide sans toucher au CSS.', 'scroll-magnet'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php echo esc_html__('Délai minimum', 'scroll-magnet'); ?></th>
+                                <td>
+                                    <input type="number" min="0" step="1" name="<?php echo esc_attr(self::OPTION_KEY); ?>[trigger_delay_seconds]" value="<?php echo esc_attr((string) $settings['trigger_delay_seconds']); ?>">
+                                    <p class="description"><?php echo esc_html__('Temps minimal en secondes avant que les triggers puissent apparaître.', 'scroll-magnet'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php echo esc_html__('Taxonomie', 'scroll-magnet'); ?></th>
+                                <td>
+                                    <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[taxonomy_scope]">
+                                        <?php foreach ($this->get_taxonomy_scope_options() as $value => $label) : ?>
+                                            <option value="<?php echo esc_attr($value); ?>" <?php selected($settings['taxonomy_scope'], $value); ?>>
+                                                <?php echo esc_html($label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <p class="description"><?php echo esc_html__('Permet de limiter le plugin à des catégories ou tags précis.', 'scroll-magnet'); ?></p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row"><?php echo esc_html__('Slugs taxonomie', 'scroll-magnet'); ?></th>
+                                <td>
+                                    <input type="text" class="regular-text" name="<?php echo esc_attr(self::OPTION_KEY); ?>[taxonomy_terms]" value="<?php echo esc_attr($settings['taxonomy_terms']); ?>">
+                                    <p class="description"><?php echo esc_html__('Liste de slugs séparés par des virgules. Exemple: seo, ecommerce, actualites.', 'scroll-magnet'); ?></p>
                                 </td>
                             </tr>
                         </tbody>
@@ -620,8 +668,8 @@ final class Scroll_Magnet {
             'download_link' => $release['package'],
             'sections' => [
                 'description' => 'Behavior-based conversion CTAs triggered by visitor scroll depth.',
-                'installation' => 'Upload the plugin, activate it, then go to Settings > Scroll Magnet to configure your three CTA triggers.',
-                'changelog' => sprintf("= %s =\n* GitHub release package.\n", $release['version']),
+                'installation' => 'Upload the plugin, activate it, then go to Settings > Scroll Magnet to configure your triggers. Future updates can be delivered from GitHub releases directly inside the WordPress Extensions menu.',
+                'changelog' => $this->build_release_changelog($release),
             ],
             'banners' => [],
             'icons' => [],
@@ -706,6 +754,9 @@ final class Scroll_Magnet {
             'device_scope' => 'all',
             'url_contains' => '',
             'template_style' => 'classic',
+            'trigger_delay_seconds' => 0,
+            'taxonomy_scope' => 'any',
+            'taxonomy_terms' => '',
             'stage_1' => [
                 'enabled' => true,
                 'percent' => 50,
@@ -756,6 +807,7 @@ final class Scroll_Magnet {
                 'buttonLabel' => $stage['button_label'],
                 'buttonUrl' => $stage['button_url'],
                 'theme' => $settings['template_style'] ?? 'classic',
+                'minSeconds' => (int) ($settings['trigger_delay_seconds'] ?? 0),
             ];
         }
 
@@ -818,6 +870,15 @@ final class Scroll_Magnet {
             }
         }
 
+        $taxonomy_scope = $settings['taxonomy_scope'] ?? 'any';
+        $taxonomy_terms = $this->parse_taxonomy_terms($settings['taxonomy_terms'] ?? '');
+        if ($taxonomy_scope !== 'any' && !empty($taxonomy_terms)) {
+            $taxonomy = $taxonomy_scope === 'category' ? 'category' : 'post_tag';
+            if (!has_term($taxonomy_terms, $taxonomy, get_queried_object_id())) {
+                return false;
+            }
+        }
+
         return in_array($scope, ['all', 'posts', 'pages', 'specific'], true);
     }
 
@@ -873,6 +934,32 @@ final class Scroll_Magnet {
         return in_array($value, $allowed, true) ? $value : 'classic';
     }
 
+    private function sanitize_taxonomy_scope($value): string {
+        $value = is_string($value) ? $value : 'any';
+        $allowed = array_keys($this->get_taxonomy_scope_options());
+
+        return in_array($value, $allowed, true) ? $value : 'any';
+    }
+
+    private function sanitize_taxonomy_terms($value): string {
+        if (!is_string($value)) {
+            return '';
+        }
+
+        $parts = preg_split('/\s*,\s*/', strtolower(trim($value)));
+        $parts = is_array($parts) ? $parts : [];
+        $parts = array_filter(
+            array_map(
+                static function (string $term): string {
+                    return sanitize_title($term);
+                },
+                $parts
+            )
+        );
+
+        return implode(',', $parts);
+    }
+
     private function get_scope_options(): array {
         return [
             'all' => __('Toutes les pages et articles', 'scroll-magnet'),
@@ -895,6 +982,14 @@ final class Scroll_Magnet {
             'classic' => __('Classic', 'scroll-magnet'),
             'contrast' => __('Contrast', 'scroll-magnet'),
             'soft' => __('Soft', 'scroll-magnet'),
+        ];
+    }
+
+    private function get_taxonomy_scope_options(): array {
+        return [
+            'any' => __('Aucune', 'scroll-magnet'),
+            'category' => __('Categories', 'scroll-magnet'),
+            'tag' => __('Tags', 'scroll-magnet'),
         ];
     }
 
@@ -984,6 +1079,19 @@ final class Scroll_Magnet {
         return array_slice($pages, 0, 8, true);
     }
 
+    private function parse_taxonomy_terms($value): array {
+        if (!is_string($value) || trim($value) === '') {
+            return [];
+        }
+
+        $parts = preg_split('/\s*,\s*/', trim($value));
+        $parts = is_array($parts) ? $parts : [];
+
+        return array_values(array_filter($parts, static function (string $term): bool {
+            return $term !== '';
+        }));
+    }
+
     private function get_github_release_data(): ?array {
         $cache_key = self::TRANSIENT_PREFIX . 'github_release';
         $cached = get_transient($cache_key);
@@ -1050,6 +1158,16 @@ final class Scroll_Magnet {
         set_transient($cache_key, $data, self::UPDATE_CACHE_TTL);
 
         return $data;
+    }
+
+    private function build_release_changelog(array $release): string {
+        $body = isset($release['body']) && is_string($release['body']) ? trim($release['body']) : '';
+
+        if ($body !== '') {
+            return sprintf("= %s =\n%s\n", $release['version'], wp_strip_all_tags($body));
+        }
+
+        return sprintf("= %s =\nGitHub release package.\n", $release['version']);
     }
 
     private function request_github_release(string $path) {
