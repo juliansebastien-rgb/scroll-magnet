@@ -4,7 +4,7 @@ Tags: popup, call to action, marketing, conversion, scroll, cta
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,6 +38,8 @@ This makes the plugin useful for:
 - Lightweight front-end loading
 - Basic view and click tracking
 - Live preview in the admin page
+- CSV export and stats reset
+- Recent activity log
 
 == Installation ==
 
@@ -45,6 +47,10 @@ This makes the plugin useful for:
 2. Activate `Scroll Magnet` through the WordPress plugins screen.
 3. Go to `Settings > Scroll Magnet`.
 4. Configure your scroll triggers and save changes.
+
+== Screenshots ==
+
+1. Scroll Magnet settings screen with trigger configuration, live preview and stats.
 
 == Frequently Asked Questions ==
 
@@ -61,6 +67,13 @@ It can show a popup, but its main value is behavior-based conversion triggering 
 This version includes simple per-trigger view and click counters. More advanced analytics and testing are planned for a future premium version.
 
 == Changelog ==
+
+= 0.3.0 =
+
+- Added CSV export for plugin statistics
+- Added stats reset action in admin
+- Added recent activity log with page paths
+- Added WordPress.org publication assets to the repository
 
 = 0.2.0 =
 

@@ -3,7 +3,7 @@
  * Plugin Name: Scroll Magnet
  * Plugin URI: https://github.com/juliansebastien-rgb/scroll-magnet
  * Description: Behavior-based conversion CTAs triggered by visitor scroll depth.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: Le Labo d'Azertaf
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 final class Scroll_Magnet {
-    private const VERSION = '0.2.0';
+    private const VERSION = '0.3.0';
     private const OPTION_KEY = 'scroll_magnet_settings';
     private const STATS_OPTION_KEY = 'scroll_magnet_stats';
     private const TRANSIENT_PREFIX = 'scroll_magnet_';
@@ -34,6 +34,8 @@ final class Scroll_Magnet {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('wp_ajax_scroll_magnet_track', [$this, 'handle_track_event']);
         add_action('wp_ajax_nopriv_scroll_magnet_track', [$this, 'handle_track_event']);
+        add_action('admin_post_scroll_magnet_export_stats', [$this, 'handle_export_stats']);
+        add_action('admin_post_scroll_magnet_reset_stats', [$this, 'handle_reset_stats']);
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), [$this, 'plugin_action_links']);
         add_filter('pre_set_site_transient_update_plugins', [$this, 'inject_github_update']);
         add_filter('plugins_api', [$this, 'filter_plugin_information'], 20, 3);
@@ -161,6 +163,7 @@ final class Scroll_Magnet {
 
         $settings = $this->get_settings();
         $stats = $this->get_stats();
+        $recent_events = $stats['recent_events'] ?? [];
         ?>
         <div class="wrap scroll-magnet-admin">
             <h1><?php echo esc_html__('Scroll Magnet', 'scroll-magnet'); ?></h1>
@@ -292,6 +295,14 @@ final class Scroll_Magnet {
             <div class="scroll-magnet-admin__section">
                 <h2><?php echo esc_html__('Statistiques MVP', 'scroll-magnet'); ?></h2>
                 <p class="description"><?php echo esc_html__('Compteurs cumulés par trigger. Ces stats servent surtout à valider le potentiel avant une vraie version analytics plus poussée.', 'scroll-magnet'); ?></p>
+                <div class="scroll-magnet-admin__actions">
+                    <a class="button button-secondary" href="<?php echo esc_url(wp_nonce_url(admin_url('admin-post.php?action=scroll_magnet_export_stats'), 'scroll_magnet_export_stats')); ?>"><?php echo esc_html__('Exporter en CSV', 'scroll-magnet'); ?></a>
+                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" onsubmit="return window.confirm('Reset all Scroll Magnet stats?');">
+                        <input type="hidden" name="action" value="scroll_magnet_reset_stats">
+                        <?php wp_nonce_field('scroll_magnet_reset_stats'); ?>
+                        <button type="submit" class="button button-link-delete"><?php echo esc_html__('Réinitialiser les stats', 'scroll-magnet'); ?></button>
+                    </form>
+                </div>
                 <table class="widefat striped">
                     <thead>
                         <tr>
@@ -315,7 +326,44 @@ final class Scroll_Magnet {
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <th><?php echo esc_html__('Total', 'scroll-magnet'); ?></th>
+                            <th><?php echo esc_html((string) $this->get_total_views($stats)); ?></th>
+                            <th><?php echo esc_html((string) $this->get_total_clicks($stats)); ?></th>
+                            <th><?php echo esc_html((string) $this->get_total_ctr($stats)); ?>%</th>
+                        </tr>
+                    </tfoot>
                 </table>
+                <p class="description"><?php echo esc_html__('Dernière activité: ', 'scroll-magnet') . esc_html($this->get_last_activity_label($stats)); ?></p>
+            </div>
+
+            <div class="scroll-magnet-admin__section">
+                <h2><?php echo esc_html__('Activité récente', 'scroll-magnet'); ?></h2>
+                <?php if (empty($recent_events)) : ?>
+                    <p class="description"><?php echo esc_html__('Aucun événement enregistré pour le moment.', 'scroll-magnet'); ?></p>
+                <?php else : ?>
+                    <table class="widefat striped">
+                        <thead>
+                            <tr>
+                                <th><?php echo esc_html__('Date', 'scroll-magnet'); ?></th>
+                                <th><?php echo esc_html__('Trigger', 'scroll-magnet'); ?></th>
+                                <th><?php echo esc_html__('Événement', 'scroll-magnet'); ?></th>
+                                <th><?php echo esc_html__('Page', 'scroll-magnet'); ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($recent_events as $event_row) : ?>
+                                <tr>
+                                    <td><?php echo esc_html($event_row['time'] ?? ''); ?></td>
+                                    <td><?php echo esc_html($event_row['stage'] ?? ''); ?></td>
+                                    <td><?php echo esc_html($event_row['event'] ?? ''); ?></td>
+                                    <td><?php echo esc_html($event_row['page'] ?? ''); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
             </div>
         </div>
         <?php
@@ -329,6 +377,7 @@ final class Scroll_Magnet {
 
         $stage = isset($_POST['stage']) ? sanitize_key(wp_unslash($_POST['stage'])) : '';
         $event = isset($_POST['event']) ? sanitize_key(wp_unslash($_POST['event'])) : '';
+        $page = isset($_POST['page']) ? esc_url_raw(wp_unslash($_POST['page'])) : '';
 
         if (!in_array($stage, ['stage_1', 'stage_2', 'stage_3'], true)) {
             wp_send_json_error(['message' => 'invalid_stage'], 400);
@@ -349,8 +398,82 @@ final class Scroll_Magnet {
             $stats[$stage]['clicks'] = (int) ($stats[$stage]['clicks'] ?? 0) + 1;
         }
 
+        $stats['last_activity'] = current_time('mysql');
+        $recent_events = isset($stats['recent_events']) && is_array($stats['recent_events']) ? $stats['recent_events'] : [];
+        array_unshift(
+            $recent_events,
+            [
+                'time' => current_time('mysql'),
+                'stage' => strtoupper(str_replace('_', ' ', $stage)),
+                'event' => $event,
+                'page' => $this->normalize_page_for_stats($page),
+            ]
+        );
+        $stats['recent_events'] = array_slice($recent_events, 0, 50);
+
         update_option(self::STATS_OPTION_KEY, $stats, false);
         wp_send_json_success(['stage' => $stage, 'event' => $event]);
+    }
+
+    public function handle_export_stats(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+
+        check_admin_referer('scroll_magnet_export_stats');
+
+        $stats = $this->get_stats();
+        $filename = 'scroll-magnet-stats-' . gmdate('Y-m-d') . '.csv';
+
+        nocache_headers();
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+
+        $output = fopen('php://output', 'w');
+        if ($output === false) {
+            exit;
+        }
+
+        fputcsv($output, ['Trigger', 'Views', 'Clicks', 'CTR']);
+        foreach ([1, 2, 3] as $index) {
+            $stage_key = 'stage_' . $index;
+            $stage_stats = $stats[$stage_key] ?? ['views' => 0, 'clicks' => 0];
+            $views = (int) ($stage_stats['views'] ?? 0);
+            $clicks = (int) ($stage_stats['clicks'] ?? 0);
+            $ctr = $views > 0 ? round(($clicks / $views) * 100, 2) : 0;
+            fputcsv($output, ['Trigger ' . $index, $views, $clicks, $ctr]);
+        }
+
+        fputcsv($output, []);
+        fputcsv($output, ['Recent activity']);
+        fputcsv($output, ['Date', 'Trigger', 'Event', 'Page']);
+
+        foreach (($stats['recent_events'] ?? []) as $event_row) {
+            fputcsv(
+                $output,
+                [
+                    $event_row['time'] ?? '',
+                    $event_row['stage'] ?? '',
+                    $event_row['event'] ?? '',
+                    $event_row['page'] ?? '',
+                ]
+            );
+        }
+
+        fclose($output);
+        exit;
+    }
+
+    public function handle_reset_stats(): void {
+        if (!current_user_can('manage_options')) {
+            wp_die('Unauthorized');
+        }
+
+        check_admin_referer('scroll_magnet_reset_stats');
+        update_option(self::STATS_OPTION_KEY, $this->get_default_stats(), false);
+
+        wp_safe_redirect(admin_url('options-general.php?page=scroll-magnet'));
+        exit;
     }
 
     public function inject_github_update($transient) {
@@ -461,8 +584,10 @@ final class Scroll_Magnet {
         $stats = get_option(self::STATS_OPTION_KEY, []);
 
         if (!is_array($stats)) {
-            $stats = [];
+            $stats = $this->get_default_stats();
         }
+
+        $stats = wp_parse_args($stats, $this->get_default_stats());
 
         foreach ([1, 2, 3] as $index) {
             $key = 'stage_' . $index;
@@ -472,6 +597,16 @@ final class Scroll_Magnet {
         }
 
         return $stats;
+    }
+
+    private function get_default_stats(): array {
+        return [
+            'stage_1' => ['views' => 0, 'clicks' => 0],
+            'stage_2' => ['views' => 0, 'clicks' => 0],
+            'stage_3' => ['views' => 0, 'clicks' => 0],
+            'last_activity' => '',
+            'recent_events' => [],
+        ];
     }
 
     private function get_default_settings(): array {
@@ -634,6 +769,58 @@ final class Scroll_Magnet {
         }
 
         return __('Fin de lecture: ajoute une notion d’urgence ou de dernière chance.', 'scroll-magnet');
+    }
+
+    private function normalize_page_for_stats(string $page): string {
+        if ($page === '') {
+            return '';
+        }
+
+        $path = wp_parse_url($page, PHP_URL_PATH);
+        if (is_string($path) && $path !== '') {
+            return $path;
+        }
+
+        return $page;
+    }
+
+    private function get_total_views(array $stats): int {
+        $total = 0;
+        foreach ([1, 2, 3] as $index) {
+            $total += (int) ($stats['stage_' . $index]['views'] ?? 0);
+        }
+
+        return $total;
+    }
+
+    private function get_total_clicks(array $stats): int {
+        $total = 0;
+        foreach ([1, 2, 3] as $index) {
+            $total += (int) ($stats['stage_' . $index]['clicks'] ?? 0);
+        }
+
+        return $total;
+    }
+
+    private function get_total_ctr(array $stats): float {
+        $views = $this->get_total_views($stats);
+        $clicks = $this->get_total_clicks($stats);
+
+        if ($views <= 0) {
+            return 0;
+        }
+
+        return round(($clicks / $views) * 100, 2);
+    }
+
+    private function get_last_activity_label(array $stats): string {
+        $last_activity = isset($stats['last_activity']) && is_string($stats['last_activity']) ? $stats['last_activity'] : '';
+
+        if ($last_activity === '') {
+            return __('Aucune donnée', 'scroll-magnet');
+        }
+
+        return $last_activity;
     }
 
     private function get_github_release_data(): ?array {

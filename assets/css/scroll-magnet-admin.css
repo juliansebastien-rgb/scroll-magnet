@@ -43,6 +43,17 @@
     margin-top: 16px;
 }
 
+.scroll-magnet-admin__actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 0 16px;
+}
+
+.scroll-magnet-admin__actions form {
+    margin: 0;
+}
+
 .scroll-magnet-admin__preview-card,
 .scroll-magnet-admin__preview-empty {
     padding: 18px;

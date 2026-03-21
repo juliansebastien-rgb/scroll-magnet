@@ -24,6 +24,7 @@
     payload.set("nonce", config.ajaxNonce);
     payload.set("stage", stageKey);
     payload.set("event", eventName);
+    payload.set("page", window.location.href);
 
     fetch(config.ajaxUrl, {
       method: "POST",

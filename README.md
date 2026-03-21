@@ -8,7 +8,7 @@ Instead of using generic popups, the plugin helps site owners trigger different 
 - 70% scroll: reassurance CTA
 - 90% scroll: final conversion push
 
-## Version 0.2.0
+## Version 0.3.0
 
 - 3 configurable scroll triggers
 - 3 display formats: bottom banner, floating button, soft popup
@@ -18,6 +18,8 @@ Instead of using generic popups, the plugin helps site owners trigger different 
 - Basic view and click tracking per trigger
 - Live admin preview
 - GitHub-based plugin update support
+- CSV export and stats reset
+- Recent activity log in the admin page
 
 ## Installation
 
